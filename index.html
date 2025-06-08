@@ -304,6 +304,29 @@
         info.style.opacity = 0;
       }, 1000);
     }
+      function atualizarContador() {
+      const agora = new Date();
+      const anoAtual = agora.getFullYear();
+      let dataAlvo = new Date(anoAtual, 5, 16, 0, 0, 0); // 16 de junho (junho = 5)
+
+      if (agora > dataAlvo) {
+        dataAlvo = new Date(anoAtual + 1, 5, 16, 0, 0, 0);
+      }
+
+      const diferenca = dataAlvo - agora;
+
+      const dias = Math.floor(diferenca / (1000 * 60 * 60 * 24));
+      const horas = Math.floor((diferenca / (1000 * 60 * 60)) % 24);
+      const minutos = Math.floor((diferenca / (1000 * 60)) % 60);
+      const segundos = Math.floor((diferenca / 1000) % 60);
+
+      document.getElementById("contador").textContent =
+        `${dias} dias, ${horas}h ${minutos}min ${segundos}s`;
+
+      setTimeout(atualizarContador, 1000);
+    }
+
+    atualizarContador();
 
     function onYouTubeIframeAPIReady() {
       button.addEventListener("click", playRandom);
