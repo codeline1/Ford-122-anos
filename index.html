@@ -100,6 +100,23 @@
       text-shadow: 2px 2px 8px #000;
     }
 
+      .container {
+      text-align: center;
+      padding: 40px;
+      border-radius: 20px;
+      box-shadow: 0 0 40px rgba(0, 153, 255, 0.4);
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border: 3px solid rgba(255, 255, 255, 0.2);
+      animation: pulse 3s infinite;
+    }
+        #contador {
+      font-size: 2.2em;
+      color: #002244;
+      font-weight: bold;
+      text-shadow: 1px 1px 2px #fff;
+    }
+
     @keyframes fadeInOut {
       0%   { opacity: 0; transform: scale(0.8); }
       20%  { opacity: 1; transform: scale(1); }
@@ -118,6 +135,7 @@
   <div id="controls" class="center">
     <button id="playButton">🎵 Tocar Música Aleatória</button>
   </div>
+  <!-- Contador regressivo -->
   <div class="container">
     <h1>Contagem Regressiva para o Aniversário 🎉</h1>
     <div id="contador">Calculando...</div>
