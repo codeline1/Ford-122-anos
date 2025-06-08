@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Reprodutor Aleatório com Fundo e Frases</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      overflow: hidden;
+      background-color: black;
+      font-family: 'Segoe UI', sans-serif;
+    }
+
+    /* Plano de fundo animado */
+    #background {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 100%;
+      width: 100%;
+      pointer-events: none;
+      opacity: 0;
+      animation: colorCycle 15s infinite;
+      transition: opacity 1s ease-in-out;
+      z-index: 0;
+    }
+
+    @keyframes colorCycle {
+      0%   { background-color: #ff6b6b; }
+      25%  { background-color: #feca57; }
+      50%  { background-color: #1dd1a1; }
+      75%  { background-color: #54a0ff; }
+      100% { background-color: #ff6b6b; }
+    }
+
+    /* Botão de controle */
+    #controls {
+      position: absolute;
+      transition: all 1s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      z-index: 10;
+    }
+
+    .center {
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    .top-left {
+      top: 20px;
+      left: 20px;
+      transform: none;
+    }
+
+    button {
+      padding: 15px 30px;
+      font-size: 18px;
+      border: none;
+      border-radius: 10px;
+      background-color: #ffffffcc;
+      cursor: pointer;
+      transition: background-color 0.3s, opacity 1s;
+    }
+
+    button:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+
+    /* Informações da música */
+    #info {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      background: rgba(0, 0, 0, 0.7);
+      color: white;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 16px;
+      opacity: 0;
+      transition: opacity 1s ease-in-out;
+      z-index: 5;
+    }
+
+    /* Frases dinâmicas */
+    .phrase {
+      position: absolute;
+      color: white;
+      font-size: 22px;
+      font-weight: bold;
+      opacity: 0;
+      animation: fadeInOut 5s ease-in-out;
+      pointer-events: none;
+      z-index: 2;
+      text-shadow: 2px 2px 8px #000;
+    }
+
+    @keyframes fadeInOut {
+      0%   { opacity: 0; transform: scale(0.8); }
+      20%  { opacity: 1; transform: scale(1); }
+      80%  { opacity: 1; }
+      100% { opacity: 0; transform: scale(1.2); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Fundo animado -->
+  <div id="background"></div>
+
+  <!-- Botão de controle -->
+  <div id="controls" class="center">
+    <button id="playButton">🎵 Tocar Música Aleatória</button>
+  </div>
+
+  <!-- Informações da música -->
+  <div id="info"></div>
+
+  <!-- Player do YouTube invisível -->
+  <div id="youtube-audio"></div>
+
+  <!-- Container de frases -->
+  <div id="phrases-container"></div>
+
+  <script>
+    const videoData = [
+      { id: "9cuguyBNtXE", title: "Música 1", duration: "3:21" },
+      { id: "ttx-KwDSRgg", title: "Música 2", duration: "2:45" },
+      { id: "QnAN2wdoBbw", title: "Música 3", duration: "4:05" },
+      { id: "YSxS8A1GSso", title: "Música 4", duration: "3:10" },
+      { id: "X9y5ka70Qto", title: "Música 5", duration: "2:59" }
+    ];
+
+    const phrases = [
+      "O insucesso é apenas uma oportunidade para recomeçar com mais inteligência.",
+      "Pensar é o trabalho mais difícil que existe. Talvez por isso tão poucos se dediquem a ele.",
+      "Se o dinheiro for a sua esperança de independência, você jamais a terá. A única segurança verdadeira consiste numa reserva de sabedoria, de experiência e de competência.",
+      "Quer você acredite que consiga fazer uma coisa ou não, você está certo.",
+      "Não encontro defeitos. Encontro soluções. Qualquer um sabe queixar-se.",
+      "Não encontro defeitos. Encontro soluções. Qualquer um sabe queixar-se.",
+      "Não nos tornamos ricos graças ao que ganhamos, mas com o que não gastamos.",
+      "Não é o empregador quem paga os salários, mas o cliente.",
+      "Corte sua própria lenha. Assim, ela aquecerá você duas vezes.",
+      "A única história que vale alguma coisa é a história que fazemos hoje.",
+      "Não encontre defeitos, encontre soluções. Qualquer um sabe queixar-se.",
+      "Um idealista é alguém que ajuda outro a ter lucro.",
+      "Nada é difícil se for dividido em pequenas partes.",
+      "Henry ford 1922",
+      "O dinheiro é a coisa mais inútil do mundo. Não estou interessado nele, apenas nas coisas de que ele é apenas um símbolo.",
+      "Henry Ford The Forum, abr. 1928.",
+      "Se você pensa que pode, você pode. E se você pensa que não pode, você está certo.",
+      "Transforme o tempo em arte.",
+      "Se eu perguntasse a meus compradores o que eles queriam, teriam dito que era um cavalo mais rápido.",
+      "Você não consegue construir uma reputação naquilo que você pretende fazer.",
+      "O dinheiro não modifica o homem, apenas o desmascara.",
+      "Nossos fracassos são, às vezes, mais frutíferos que nossos êxitos",
+      "Se eu tivesse um único dólar, investiria em propaganda.",
+      "Os que renunciam são, em maior número, aqueles que mais fracassam.",
+      "Não encontre um defeito, encontre uma solução."
+    ];
+
+    let lastIndex = -1;
+    let player;
+    const info = document.getElementById("info");
+    const controls = document.getElementById("controls");
+    const button = document.getElementById("playButton");
+    const background = document.getElementById("background");
+    const phrasesContainer = document.getElementById("phrases-container");
+    let timerInterval;
+    let phraseInterval;
+
+    function getRandomIndex() {
+      let index;
+      do {
+        index = Math.floor(Math.random() * videoData.length);
+      } while (index === lastIndex);
+      lastIndex = index;
+      return index;
+    }
+
+    function showInfo(text, duration = 3000) {
+      info.innerHTML = text;
+      info.style.opacity = 1;
+      setTimeout(() => {
+        info.style.opacity = 0;
+      }, duration);
+    }
+
+    function updateTime() {
+      if (player && player.getCurrentTime) {
+        const seconds = Math.floor(player.getCurrentTime());
+        const minutes = Math.floor(seconds / 60);
+        const sec = String(seconds % 60).padStart(2, '0');
+        info.innerHTML = `⏱️ ${minutes}:${sec}`;
+        info.style.opacity = 1;
+      }
+    }
+
+    function showRandomPhrase() {
+      const phrase = phrases[Math.floor(Math.random() * phrases.length)];
+      const el = document.createElement("div");
+      el.className = "phrase";
+      el.textContent = phrase;
+
+      // Posicionamento aleatório
+      el.style.top = `${Math.random() * 80 + 5}%`;
+      el.style.left = `${Math.random() * 80 + 5}%`;
+
+      phrasesContainer.appendChild(el);
+
+      // Remover após a animação
+      setTimeout(() => {
+        el.remove();
+      }, 5000);
+    }
+
+    function playRandom() {
+      const index = getRandomIndex();
+      const video = videoData[index];
+
+      if (player) {
+        player.loadVideoById(video.id);
+      } else {
+        player = new YT.Player('youtube-audio', {
+          height: '0',
+          width: '0',
+          videoId: video.id,
+          playerVars: {
+            autoplay: 1,
+            controls: 0,
+            modestbranding: 1,
+            rel: 0
+          },
+          events: {
+            onReady: (event) => event.target.playVideo(),
+            onStateChange: (event) => handleStateChange(event, video)
+          }
+        });
+      }
+
+      if (player && player.loadVideoById) {
+        player.loadVideoById(video.id);
+      }
+    }
+
+    function handleStateChange(event, video) {
+      if (event.data === YT.PlayerState.PLAYING) {
+        startVisuals();
+        showInfo(`🎶 ${video.title} (${video.duration})`);
+        clearInterval(timerInterval);
+        timerInterval = setInterval(updateTime, 1000);
+        clearInterval(phraseInterval);
+        phraseInterval = setInterval(showRandomPhrase, 3000);
+      } else if (event.data === YT.PlayerState.ENDED) {
+        stopVisuals();
+        clearInterval(timerInterval);
+        clearInterval(phraseInterval);
+      }
+    }
+
+    function startVisuals() {
+      background.style.opacity = 1;
+      controls.classList.remove("center");
+      controls.classList.add("top-left");
+      button.disabled = true;
+    }
+
+    function stopVisuals() {
+      background.style.opacity = 0;
+      controls.classList.remove("top-left");
+      controls.classList.add("center");
+
+      setTimeout(() => {
+        button.disabled = false;
+        info.innerHTML = "";
+        info.style.opacity = 0;
+      }, 1000);
+    }
+
+    function onYouTubeIframeAPIReady() {
+      button.addEventListener("click", playRandom);
+    }
+
+    // Carrega API do YouTube
+    const tag = document.createElement('script');
+    tag.src = "https://www.youtube.com/iframe_api";
+    document.body.appendChild(tag);
+    window.onYouTubeIframeAPIReady = onYouTubeIframeAPIReady;
+  </script>
+
+</body>
+</html>
